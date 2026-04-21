@@ -121,6 +121,12 @@ class Settings(BaseSettings):
         validation_alias="LLAMACPP_BASE_URL",
     )
 
+    # ==================== Ollama Config ====================
+    ollama_base_url: str = Field(
+        default="http://localhost:11434/v1",
+        validation_alias="OLLAMA_BASE_URL",
+    )
+
     # ==================== Model ====================
     # All Claude model requests are mapped to this single model (fallback)
     # Format: provider_type/model/name

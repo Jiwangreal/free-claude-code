@@ -11,6 +11,7 @@ from providers.exceptions import UnknownProviderTypeError
 from providers.llamacpp import LlamaCppProvider
 from providers.lmstudio import LMStudioProvider
 from providers.nvidia_nim import NvidiaNimProvider
+from providers.ollama import OllamaProvider
 from providers.open_router import OpenRouterProvider
 from providers.registry import (
     PROVIDER_DESCRIPTORS,
@@ -28,6 +29,7 @@ def _make_settings(**overrides):
     mock.deepseek_api_key = "test_deepseek_key"
     mock.lm_studio_base_url = "http://localhost:1234/v1"
     mock.llamacpp_base_url = "http://localhost:8080/v1"
+    mock.ollama_base_url = "http://localhost:11434/v1"
     mock.nvidia_nim_proxy = ""
     mock.open_router_proxy = ""
     mock.lmstudio_proxy = ""
@@ -83,6 +85,7 @@ def test_create_provider_instantiates_each_builtin():
         "deepseek": DeepSeekProvider,
         "lmstudio": LMStudioProvider,
         "llamacpp": LlamaCppProvider,
+        "ollama": OllamaProvider,
     }
 
     with (
