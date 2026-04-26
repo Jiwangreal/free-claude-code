@@ -278,6 +278,17 @@ CAPABILITY_CONTRACTS: tuple[CapabilityContract, ...] = (
         ("test_llamacpp_models_endpoint_when_available",),
     ),
     CapabilityContract(
+        "local_providers",
+        "ollama_openai_chat",
+        "ollama_endpoint",
+        "providers.ollama.OllamaProvider",
+        "OpenAI-compatible chat request body and local Ollama URL",
+        "Anthropic SSE stream through the proxy",
+        "SSE error event for local upstream failure",
+        ("tests/providers/test_ollama.py",),
+        ("test_ollama_models_endpoint_when_available",),
+    ),
+    CapabilityContract(
         "openrouter",
         "native_anthropic_messages",
         "provider_matrix",

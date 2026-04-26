@@ -29,6 +29,15 @@ def test_llamacpp_native_messages_e2e(smoke_config: SmokeConfig) -> None:
     )
 
 
+@pytest.mark.smoke_target("ollama")
+def test_ollama_openai_messages_e2e(smoke_config: SmokeConfig) -> None:
+    _local_native_messages_e2e(
+        smoke_config,
+        provider="ollama",
+        base_url=smoke_config.settings.ollama_base_url,
+    )
+
+
 def _local_native_messages_e2e(
     smoke_config: SmokeConfig,
     *,
@@ -46,7 +55,7 @@ def _local_native_messages_e2e(
     except httpx.TimeoutException as exc:
         pytest.skip(f"upstream_unavailable: {provider} models endpoint: {exc}")
     assert models.status_code == 200, models.text
-    model_id = _first_local_model_id(models)
+    model_id = _first_local_model_id(models, provider=provider, base_url=base_url)
 
     with SmokeServerDriver(
         smoke_config,
@@ -60,11 +69,43 @@ def _local_native_messages_e2e(
     assert_product_stream(turn.events)
 
 
-def _first_local_model_id(response: httpx.Response) -> str:
+def _first_local_model_id(
+    response: httpx.Response, *, provider: str, base_url: str
+) -> str:
     payload = response.json()
     data = payload.get("data") if isinstance(payload, dict) else None
     if isinstance(data, list):
         for item in data:
             if isinstance(item, dict) and isinstance(item.get("id"), str):
                 return item["id"]
+        pytest.skip(f"upstream_unavailable: {provider} has no local models")
+    if provider == "ollama":
+        return _first_ollama_tag_model_id(base_url)
     pytest.fail("product_failure: local /models did not expose a model id")
+
+
+def _first_ollama_tag_model_id(base_url: str) -> str:
+    tags_url = f"{_ollama_root_url(base_url)}/api/tags"
+    try:
+        response = httpx.get(tags_url, timeout=5)
+    except httpx.ConnectError as exc:
+        pytest.skip(f"upstream_unavailable: ollama tags endpoint: {exc}")
+    except httpx.TimeoutException as exc:
+        pytest.skip(f"upstream_unavailable: ollama tags endpoint: {exc}")
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    models = payload.get("models") if isinstance(payload, dict) else None
+    if isinstance(models, list):
+        for item in models:
+            if isinstance(item, dict) and isinstance(item.get("name"), str):
+                return item["name"]
+        pytest.skip("upstream_unavailable: ollama has no pulled models")
+    pytest.fail("product_failure: ollama /api/tags did not expose models")
+
+
+def _ollama_root_url(base_url: str) -> str:
+    stripped = base_url.rstrip("/")
+    if stripped.endswith("/v1"):
+        return stripped[:-3]
+    return stripped
